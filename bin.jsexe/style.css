@@ -1,0 +1,184 @@
+body {
+	width : 100%;
+	height : 100%;
+	margin : auto;
+}
+
+body .ace_scrollbar-h {
+    overflow-x: hidden;
+}
+
+.acmeweb {
+	position : fixed;
+	width : 100%;
+	height : 100%;
+	background-color : #AAAAAA;
+	font-family : Arial;	
+	border-box : box-sizing;
+}
+
+nav div {
+	position : relative;
+}
+
+nav input {
+	dipslay : inline-block;
+	width : calc(100% - 30px);
+	background-color :  #AAAAAA;
+}
+
+
+nav {
+	background-color : #AAAAAA;
+}
+
+.col nav {
+	padding-left : 8px;
+}
+
+.col nav table {
+	width : 100%;
+}
+
+.control {
+	margin-right : 5px;
+	margin-top : 6px;
+	width : 10px;
+	height : 10px;
+	border-radius : 10px;
+	background-color : green;
+	cursor: move;
+}
+
+.command {
+	position : relative;
+	font-family : Arial;
+	font-weight : bold;
+	font-size : 15px;
+	outline : 0px;
+	padding : 0px;
+	color : black;
+	border : 0px;
+	border-box : box-sizing;
+}
+
+.col {
+	position : relative;
+	display : inline-block;
+	vertical-align : top;
+	height : 100%;
+	box-sizing : border-box;
+}
+
+.frame {
+	height : 100%;
+	background-color : #6A6A6A;
+}
+
+.window {
+    overflow : hidden;
+}
+
+.windowFrame {
+//	margin-top : -1px;
+	width : 100%;
+	color : white;
+	background-color : #1c1c1c;
+	border : none;
+//	border : 1px solid #1c1c1c;
+	min-height : 0;
+}
+
+@-moz-document url-prefix() {
+    .windowFrame {
+        margin-top : -1px;
+    }
+}
+
+.terminal {
+    font-size: 15px;
+	width : 100%;
+	height : 100%;
+	border : none;
+}
+
+.signin-section {
+    position : absolute;
+    right : 0;
+    left : 0;
+    top : 0;
+    bottom : 0;
+    text-align:center;
+    line-height : 100%;
+    height : 99.8%;
+    width : 100%;
+    box-sizing : border-box;
+    background-image: url('img/wallpaper.jpg');
+    background-size: 100% 100%;
+   // background-color : red;
+}
+
+.form-input {
+    display : block;
+}
+
+.signin {
+    position: relative;
+    top: 40%;
+    display : inline-block;
+    background-color : white;
+    padding : 10px;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+    border : 1px solid #f1f1f1;
+    border-radius : 4px; 
+}
+
+.error {
+	float : right;
+	width : 200px;
+	margin-top : 5px;
+	margin-bottom : 5px;
+	padding-top : 4px;
+	padding-bottom : 4px;
+	border-radius : 2px;
+	background-color : #990000;
+	color : white;
+	font-weight : bold;
+}
+
+.info {
+	height : 15px;
+	margin-bottom : 2px;
+    margin-top: -2px;
+	color : #3f3f3f;
+	font-size : 12px;
+    border : none;
+}
+
+.username,.password,.signin-button {
+	width : 100%;
+	height : 30px;
+	text-align : center;
+	color : #3f3f3f;
+	font-size : 15px;
+	box-sizing : border-box;
+}
+
+.denied {
+	position : absolute;
+	font-size : 20px;
+	background-color : rgba(0,0,0,0.7);
+	color : white;
+	padding : 15px;
+	border-radius : 4px;
+	margin-left : 25px;
+}
+
+.signin-button {
+	background-color : black;
+	color : white;
+	border : none;
+	border-radius : 4px;
+}

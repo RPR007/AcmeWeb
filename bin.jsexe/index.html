@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title> AcmeWeb </title>
+	<link rel="icon" href="img/anarchy.png">
+	<link rel="stylesheet" type="text/css" href="style.css" />
+	<script src="https://cdn.socket.io/socket.io-1.4.3.js"></script>
+	<script src="ace-builds/src-min/ace.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src-min/ext-language_tools.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src/theme-merbivore_soft.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src/mode-haskell.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src/mode-javascript.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src/mode-html.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src/mode-css.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src/mode-php.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src/mode-c_cpp.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src/mode-sql.js" type="text/javascript" charset="utf-8"></script>
+	<script src="ace-builds/src/mode-latex.js" type="text/javascript" charset="utf-8"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script src="./jquery.ba-resize.js"></script>
+	<script src="./term.js"></script>
+	<script>
+	    (function ($, global) {
+            var _hash = "!",
+            noBackPlease = function () {
+                global.location.href += "#";
+
+                setTimeout(function () {
+                    global.location.href += "!";
+                }, 50);
+            };
+
+            global.setInterval(function () {
+                if (global.location.hash != _hash) {
+                    global.location.hash = _hash;
+                }
+            }, 100);
+
+            global.onload = function () {
+                noBackPlease();
+
+                // disables backspace on page except on input fields and textarea..
+                $(document.body).keydown(function (e) {
+                    var elm = e.target.nodeName.toLowerCase();
+                    if (e.which == 8 && elm !== 'input' && elm  !== 'textarea') {
+                        e.preventDefault();
+                    }
+                    // stopping event bubbling up the DOM tree..
+                    e.stopPropagation();
+                });
+            }
+        })(jQuery, window);
+	</script>
+  </head>
+  <body>
+  </body>
+  <script language="javascript" src="all.js" defer></script>
+</html>
