@@ -252,9 +252,15 @@ commandAreaInput (CommandAreaInputConfig inputType initial eSetValue dButton dFo
   --performEvent $ ffor mouseLine $ \x  -> liftIO $ putStrLn $ show x 
   dMouseLine <- holdDyn 0 mouseLine
   wordsCoords <- performEvent $ fmap (\(font,val) -> mapM (wordsCoords font) (lines val)) attachDFontDvalueClick
-  let selectLine = fmap (\(val,line) -> (lines val) !! (line-1)) (attachDyn dValueClick mouseLine)
+  let selectLine = fmap (\(val,line) -> 
+                     if (line-1) >= 0 && (line-1) < length (lines val) 
+                     then (lines val) !! (line-1)
+                     else "") (attachDyn dValueClick mouseLine)
   dSelectLine <- holdDyn "" selectLine
-  let selectWordsCoords = ffor (attachDyn dMouseLine wordsCoords) $ \(line,wordsCoords) -> wordsCoords !! (line-1)
+  let selectWordsCoords = ffor (attachDyn dMouseLine wordsCoords) $ \(line,wordsCoords) ->
+            if (line-1) >= 0 && (line-1) < length wordsCoords
+                then (wordsCoords !! (line-1))
+                else []
   let zipCoord = attachDynWith (\a b -> zip (word a) b) dSelectLine selectWordsCoords
   let eExecute =  attachDynWith command coords zipCoord
   

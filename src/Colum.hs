@@ -118,7 +118,7 @@ colum (refId,stateRef,dWindows) eDrop eColumsDrop eWindowAdd dColum = do
         (elColum,(eColum,eAddWindow,dWindowsList)) <- elDynAttr' "div" dAttrs $ do
             postBuild <- getPostBuild
                  
-            (_,eDrag,eExec) <- nav (constDyn "")  "New Dir Term Delcol"
+            (_,_,eDrag,eExec) <- nav (constDyn "")  "New Dir Term Delcol"
                      
             -- Event      
             isColumDrop <- isColumDrop eDrag eDrop

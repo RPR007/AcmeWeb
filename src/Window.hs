@@ -5,11 +5,12 @@ module Window where
 import Reflex.Dom
 import Reflex.Contrib.Window
 import Reflex.Dom.WebSocket
-import GHCJS.DOM.Document hiding (dragStart,drop,click)
+import GHCJS.DOM.Document hiding (dragStart,mouseUp,drop,click)
 import GHCJS.DOM.Element hiding (drop)
 import GHCJS.Types
 import GHCJS.Foreign
 import GHCJS.DOM.EventM
+import GHCJS.DOM.MouseEvent
 import GHCJS.Marshal
 import GHCJS.DOM.Node
 
@@ -29,7 +30,7 @@ import Ace
 import Term
 import Webdav
 import Utils
-import Command hiding (getMouseEventCoords)
+import Command
     
 import Control.Lens
 import Data.Dependent.Sum (DSum (..))
@@ -174,9 +175,10 @@ window refId dColumId eNewWindow eDrop dWindow = do
       winDynAttr <- mapDyn (\(_,_,_type,height) -> "class" =: "window"
                                     <> "style" =: ("height : " ++ show height ++ "px;")) dCombine
       elDynAttr "div" winDynAttr $ do  
-        (eClick,eDrag,eExec) <- nav dName "Del Get Put"
+        (eLeftClick,eRightClick,eDrag,eExec) <- nav dName "Del Get Put"
         dAttrs <- forDyn dHeight $ \height ->
                        "draggable" =: "true"
+                    <> "oncontextmenu" =: "return false;"
                     <> "style" =: (
                         (if height > 25
                          then "display:inline-block;"
@@ -187,7 +189,10 @@ window refId dColumId eNewWindow eDrop dWindow = do
                         "background-color : #000000;" ++
                         "width:5px;height : " ++ show (height-25) ++ "px;")
         (elLeft,_) <- elDynAttr' "div" dAttrs $ blank
-        eUp <- wrapDomEvent (_el_element elLeft) (`on` click) $ getMouseEventCoords
+        eLeft <- wrapDomEvent (_el_element elLeft) (`on` click) $ return ()
+        eElLeftClick <- wrapDomEvent (_el_element elLeft) (`on` mouseUp) $ Command.getMouseEventCoords $ _el_element elLeft
+        let eElLeftRightClick = tagDyn (constDyn ()) $ ffilter (\(button,_) -> button == 2) eElLeftClick
+        let eElLeftLeftClick = tagDyn (constDyn ()) $ ffilter (\(button,_) -> button == 0) eElLeftClick 
         eLeftDragstart <- wrapDomEvent (_el_element elLeft) (`on` dragStart) $ 
                         event >>= (liftIO . dataTransfer)
         eLeftDragstart' <- performEvent $ fmap return eLeftDragstart
@@ -215,14 +220,25 @@ window refId dColumId eNewWindow eDrop dWindow = do
                                  liftIO $ modifyMVar_ refId $ \x -> return (x+1)
                                  return id 
                                                      
-        let eWindowResize = attachWith (\a b -> (a,b)) (current dId) (leftmost [eClick,eUp])
-  
+        let eWindowResize = tag (current dId) (leftmost [eLeftClick,eElLeftLeftClick])
+        let eWindowResizeMax = tag (current dId) (leftmost [eRightClick,eElLeftRightClick])
         
         let eWindow = leftmost 
                 [
                ffor eWindowDelete $ \vId model -> model & windows .~ (window_delete vId (_windows model))
               ,ffor (tag (current dId) winDrop) $ \vId model -> model & windows .~ (window_delete vId (_windows model))
-              ,ffor eWindowResize $ \(vId,coords) model -> model & windows .~ (window_resize vId coords (_windows model))
+              ,ffor eWindowResize $ \vId model -> model & windows .~ (window_resize vId (_windows model))
+              ,ffor eWindowResizeMax $ \vId model ->
+                        let minWindows model = foldl (\acc vWindow -> 
+                                                    if not ((_window_height vWindow) <= (25 :: Double))
+                                                    then acc+1
+                                                    else acc) 0 (_windows model)
+                            helper model = 
+                                let newModel = model & windows .~ (window_resize vId (_windows model))
+                                in if (minWindows newModel) /= (1 :: Int)
+                                   then helper newModel
+                                   else newModel
+                        in helper model
               ,ffor (tag (current dId) winDrop) $ \vId model -> model & windows .~ (window_delete vId (_windows model))
               ,fmap (window_new Term "Term") performENewTerm
               ,evFile
@@ -383,8 +399,7 @@ frame refId postBuild eGet dCombine dName dType = do
             "class" =: "windowFrame"
          <> "spellcheck" =: "false"
          <> "oncontextmenu" =: "return false;"
-          -- for firefox
-         <> "style" =: ("height : " ++ show (height-24) ++ "px;"
+         <> "style" =: ("height : " ++ show (height-24) ++ "px;"  -- for firefox
                      ++ "width : calc(100% - 5px);"
                      ++ "box-sizing : border-box;"
                      ++ "outline: none;" 
@@ -402,11 +417,13 @@ frame refId postBuild eGet dCombine dName dType = do
         performEvOpenFile <- performEvent $ ffor evOpenFile $ \(vPath,vName) -> do
                             vId <- liftIO $ readMVar refId
                             liftIO $ modifyMVar_ refId $ \x -> return (x+1)
-                            return (vPath ++ vName,vId) 
+                            if vName == ""
+                                then return ("",vId)
+                                else return (vPath ++ vName,vId) 
                                   
     let ev = leftmost
            [
-            ffor performEvOpenFile $ \(vName,vId) model ->
+            ffor (ffilter (\(path,_) -> path /="") performEvOpenFile) $ \(vName,vId) model ->
                 if last vName == '/'
                 then window_new Frame vName vId model
                 else window_new File vName vId model
@@ -548,44 +565,16 @@ min_windowr vWindows =
             then Just x
             else acc
        
-window_resize_lock  :: Int -> Windows -> Windows
-window_resize_lock vId model =
-    let vWindows = _windows model
-        helperFindIndex window = vId == _window_id window
-        (Just index) = findIndex helperFindIndex vWindows;
-        vWindow = vWindows !! index
-        lock = _window_lock vWindow
-    in case lock of
-            Nothing -> model
-            Just coords ->  model & windows .~ (window_resize vId coords vWindows)
-
-window_resize_unlock :: (Int,(Int,Int)) -> Windows -> Windows
-window_resize_unlock (vId,(mx,my)) model =
-    let vWindows = _windows model
-        helperFindIndex window = vId == _window_id window
-        (Just index) = findIndex helperFindIndex vWindows;
-        vWindow = vWindows !! index
-        lock = _window_lock vWindow
-    in
-        case lock of
-            Nothing -> model
-            (Just (x,y)) ->
-           {-     let diffx = abs (mx-x)
-                    diffy = abs (my-y)
-                in  if diffx > 5 && diffy > 5 -}
-                  --  then
-                         let newWindow = vWindow & window_lock .~ Nothing
-                             newWindows = take index vWindows ++ [newWindow] ++ drop (index+1) vWindows
-                         in model & windows .~ newWindows
-                  --  else model
                     
-window_resize :: Int -> (Int,Int) -> [Window] -> [Window]
-window_resize vId coords vWindows =
+window_resize :: Int -> [Window] -> [Window]
+window_resize vId vWindows =
     let helperFindIndex window = vId == _window_id window
         (Just index) = findIndex helperFindIndex vWindows;
         vWindow = vWindows !! index
     in
-      if index == 0
+      if length vWindows <= 1
+       then vWindows
+      else if index == 0
       then
           let nextWindow = min_windowl $ tail vWindows
               helperFindIndex window = _window_id nextWindow == _window_id window
@@ -624,8 +613,7 @@ window_resize vId coords vWindows =
                      else window_min_height
               diffNextWidth = (_window_height nextWindow) - newNextWindowHeight
               newNexWindow = nextWindow & window_height .~ newNextWindowHeight                                     
-              newWindow = vWindow & window_lock .~ (Just coords)
-                                  & window_height .~
+              newWindow = vWindow & window_height .~
                             (if newLastWindowHeight > window_min_height && newNextWindowHeight > window_min_height
                                then (_window_height vWindow)+wr_height
                             else if newLastWindowHeight <= window_min_height && newNextWindowHeight <= window_min_height
@@ -651,8 +639,7 @@ window_resize vId coords vWindows =
                      else window_min_height
               diffLastWidth = (_window_height lastWindow) - newLastWindowHeight
               newLastWindow = lastWindow & window_height .~ newLastWindowHeight                                     
-              newWindow = vWindow & window_lock .~ (Just coords)
-                                  & window_height .~
+              newWindow = vWindow & window_height .~
                            (if newLastWindowHeight > window_min_height
                             then (_window_height vWindow)+wr_height
                             else (_window_height vWindow)+diffLastWidth)
