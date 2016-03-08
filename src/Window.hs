@@ -372,11 +372,13 @@ terminal postBuild dCombine dType eExec = do
         
         let initEv = ffilter (==Term) $ leftmost [updated $ nubDyn dType, tag (current dType) postBuild,tag (current dType) reload]
               
-        performEvent $ ffor (tag (current dCombine) initEv) $ \(id,_,_,_) -> do
+        termRef <- performEvent $ ffor (tag (current dCombine) initEv) $ \(id,_,_,_) -> do
             liftIO $ setInnerHTML (_el_element  termEl) (Just "")
             jsId <- liftIO $ toJSVal ("t" ++ show id)
             liftIO $ term jsId
         
+        dTerm <- holdDyn nullPtr termRef
+        performEvent $ ffor (tagDyn dTerm (updated dCombine)) $ \termRef -> liftIO $ termRefresh termRef
         return ()
             
     let ev = leftmost
@@ -444,7 +446,8 @@ update :: MonadWidget t m
           -> m (Dynamic t [Window])    
 update refId model eNewWindow eNewDir eNewTerm eWindows eAdd = do          
     dWindowResize <- windowDimensions
-
+    performEvent $ ffor (updated dWindowResize) $ \dim -> liftIO $ putStrLn $ show dim
+    
     eId <- performEvent $ ffor (leftmost [eNewWindow,eNewDir,eNewTerm]) $ \_ -> do
                     vId <- liftIO $ readMVar refId
                     liftIO $ modifyMVar_ refId $ \x -> return (x+1)

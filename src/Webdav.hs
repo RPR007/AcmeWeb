@@ -10,7 +10,7 @@ import Text.HTML.TagSoup
 import qualified Data.Char as Char
 
 url :: String -> String
-url path = "http://light9.ddns.net/fs" ++ path
+url path = "http://cyber9.ddns.net/fs" ++ path
 
 webdavReq :: String -> String -> Maybe String -> XhrRequest
 webdavReq verb url _data =

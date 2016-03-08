@@ -9,7 +9,7 @@
   
   $password = $signin->{'password'};
 
-  if($password == "Password1") {
+  if($password == "R1f23lp15") {
       echo '{ "ok" : true, "r_error" : ""}';
   } else {
       echo '{ "ok" : false, "r_error" : "wrong password"}';

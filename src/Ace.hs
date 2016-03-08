@@ -25,46 +25,10 @@ foreign import javascript unsafe
             ace :: JSVal -> IO (Ptr a)
 
 foreign import javascript unsafe
-            "switch($2) {\
-                case 'hs' :\
-                    var mode = ace.require('ace/mode/haskell').Mode;\
-                    $1.session.setMode(new mode());\
-                break;\
-                case 'js' :\
-                    var mode = ace.require('ace/mode/javascript').Mode;\
-                    $1.session.setMode(new mode());\
-                break;\
-                case 'css' :\
-                    var mode = ace.require('ace/mode/css').Mode;\
-                    $1.session.setMode(new mode());\
-                break;\
-                case 'html' :\
-                    var mode = ace.require('ace/mode/html').Mode;\
-                    $1.session.setMode(new mode());\
-                break;\
-                case 'htm' :\
-                    var mode = ace.require('ace/mode/html').Mode;\
-                    $1.session.setMode(new mode());\
-                break;\
-                case 'php' :\
-                    var mode = ace.require('ace/mode/php').Mode;\
-                    $1.session.setMode(new mode());\
-                break;\
-                case 'c' :\
-                    var mode = ace.require('ace/mode/c_cpp').Mode;\
-                    $1.session.setMode(new mode());\
-                break;\
-                case 'sql' :\
-                    var mode = ace.require('ace/mode/sql').Mode;\
-                    $1.session.setMode(new mode());\
-                break;\
-                case 'tex' :\
-                    var mode = ace.require('ace/mode/latex').Mode;\
-                    $1.session.setMode(new mode());\
-                break;\
-                default :\
-                break;\
-             }"
+            "var modelist = ace.require('ace/ext/modelist');\
+             var filePath = null;\
+             var mode = modelist.getModeForPath('.' + $2).mode;\
+             $1.session.setMode(mode);"
             aceMode :: Ptr a -> JSVal -> IO ()
             
 foreign import javascript unsafe
