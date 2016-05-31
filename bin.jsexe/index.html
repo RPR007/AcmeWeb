@@ -9,17 +9,22 @@
 	<script src="ace-builds/src-min/ace.js" type="text/javascript" charset="utf-8"></script>
 	<script src="ace-builds/src-min/ext-language_tools.js" type="text/javascript" charset="utf-8"></script>
 	<script src="ace-builds/src/theme-merbivore_soft.js" type="text/javascript" charset="utf-8"></script>
-	<script src="ace-builds/src/mode-haskell.js" type="text/javascript" charset="utf-8"></script>
-	<script src="ace-builds/src/mode-javascript.js" type="text/javascript" charset="utf-8"></script>
-	<script src="ace-builds/src/mode-html.js" type="text/javascript" charset="utf-8"></script>
-	<script src="ace-builds/src/mode-css.js" type="text/javascript" charset="utf-8"></script>
-	<script src="ace-builds/src/mode-php.js" type="text/javascript" charset="utf-8"></script>
-	<script src="ace-builds/src/mode-c_cpp.js" type="text/javascript" charset="utf-8"></script>
-	<script src="ace-builds/src/mode-sql.js" type="text/javascript" charset="utf-8"></script>
-	<script src="ace-builds/src/mode-latex.js" type="text/javascript" charset="utf-8"></script>
+    <script src="ace-builds/src/ext-modelist.js" type="text/javascript" chars
+et="utf-8"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 	<script src="./jquery.ba-resize.js"></script>
 	<script src="./term.js"></script>
+	<script>                                                                 
+        function supportFullCss3()                                               
+        {                                                                            
+            var div = document.createElement("div");                                 
+            div.style.display = 'flex';                                              
+            var s1 = div.style.display == 'flex';                                    
+            var s2 = 'perspective' in div.style;                                     
+                                                                                     
+            return (s1 && s2);                                                       
+        };                                                                           
+    </script>            
 	<script>
 	    (function ($, global) {
             var _hash = "!",
