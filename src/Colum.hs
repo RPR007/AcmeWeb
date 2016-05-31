@@ -28,6 +28,7 @@ import Control.Lens
 import Data.Dependent.Sum (DSum (..))
 
 import Data.IORef
+import Foreign.Ptr
 import Control.Concurrent.MVar
 import Control.Monad.Fix
 
@@ -144,7 +145,7 @@ colum (refId,stateRef,dWindows) eDrop eColumsDrop eWindowAdd dColum = do
                             liftIO $ modifyMVar_ refId $ \x -> return (x+1)
                                 
                             return $ Windows width (height-48)
-                                [ Window id1 Nothing "Term" Term ((fromIntegral (height-48)))
+                                [ Window id1 Nothing "Term" (Term nullPtr) ((fromIntegral (height-48)))
                                 ]
                           else defWindows
             (eAddWindow,dWindowsList) <- wWindows $ def 

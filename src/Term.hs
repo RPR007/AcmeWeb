@@ -65,16 +65,21 @@ foreign import javascript unsafe
                 term.write('Socket.io connection closed');\
                 term.destroy();\
             });\
-            $r = term"
+            $r = {term : term, socket : socket}"
             term :: JSVal -> IO (Ptr a)
        
 foreign import javascript unsafe
-            "$1.resize($2/10,$3/19);"
+            "$1.term.resize($2/10,$3/19);"
             termResize :: Ptr a -> Int -> Int -> IO ()
 foreign import javascript unsafe
             "if($1 != null) {\
              }"
             termRefresh :: Ptr a -> IO ()
+
+foreign import javascript unsafe
+            "$1.socket.emit('input', $2 + '\\n');"
+            termWrite :: Ptr a -> JSVal -> IO ()
+            
 #else
 term = error "term: only available from JavaScript"
 termResize = error "termResize: only available from JavaScript"

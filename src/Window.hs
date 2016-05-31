@@ -42,7 +42,7 @@ import Control.Monad.Fix
 
 
 -- Model
-data WindowType = File | Term | Frame deriving (Eq,Show)
+data WindowType = File | Term (Ptr Int) | Frame deriving (Eq,Show)
                 
 data Window
    = Window 
@@ -121,6 +121,10 @@ liftM concat $ mapM makeLenses
   , ''WindowsConfig
   ]
   
+isTerm :: WindowType -> Bool
+isTerm (Term _) = True
+isTerm _ = False
+
 -- View
 wWindows :: MonadWidget t m => WindowsConfig t m b -> m (Event t (Int,Window), Dynamic t [(Int,Window)])
 wWindows (WindowsConfig refIdM columId eNewWindow eNewDir eNewTerm eDrop eColumsDrop dWindowsList eAdd vWindowsM stateRef) = do
@@ -129,7 +133,7 @@ wWindows (WindowsConfig refIdM columId eNewWindow eNewDir eNewTerm eDrop eColums
       let eAdd' = fmap (\(_,(_,vWindow)) -> vWindow) $ ffilter (\(columId,(columId',_)) -> columId == columId') $ attachDyn columId eAdd
       fupdate <- mapDyn windowsToList =<< update refId vWindows eNewWindow eNewDir eNewTerm eWindows eAdd'
       (eWindows,eWindowAdd) <- do
-                rec let win = window refId columId eNewWindow (leftmost 
+                rec let win = window (refId,dWindowsList) columId eNewWindow (leftmost 
                                                                 [ffor eColumsDrop ColumDrop])
                     let (Just stateRef') = stateRef
                     windowsEv <- wSimpleList stateRef' dWindowsList fupdate win
@@ -148,13 +152,13 @@ windowsToList vWindows = foldl helper [] vWindows
       helper acc vWindow = acc ++ [(_window_id vWindow, vWindow)]
                            
 window :: MonadWidget t m
-          => MVar Int
+          => (MVar Int,Dynamic t [(Int,Window)])
           -> Dynamic t Int
           -> Event t ()
           -> Event t Drop
           -> Dynamic t Window
           -> m (Event t (Windows -> Windows), Event t (Int,Window))
-window refId dColumId eNewWindow eDrop dWindow = do
+window (refId,dWindowsList) dColumId eNewWindow eDrop dWindow = do
       doc <- askDocument
       postBuild <- getPostBuild
       
@@ -175,7 +179,7 @@ window refId dColumId eNewWindow eDrop dWindow = do
       winDynAttr <- mapDyn (\(_,_,_type,height) -> "class" =: "window"
                                     <> "style" =: ("height : " ++ show height ++ "px;")) dCombine
       elDynAttr "div" winDynAttr $ do  
-        (eLeftClick,eRightClick,eDrag,eExec) <- nav dName "Del Get Put"
+        (eLeftClick,eRightClick,eDrag,eExec) <- nav dName "Del Get Put make"
         dAttrs <- forDyn dHeight $ \height ->
                        "draggable" =: "true"
                     <> "oncontextmenu" =: "return false;"
@@ -223,6 +227,17 @@ window refId dColumId eNewWindow eDrop dWindow = do
         let eWindowResize = tag (current dId) (leftmost [eLeftClick,eElLeftLeftClick])
         let eWindowResizeMax = tag (current dId) (leftmost [eRightClick,eElLeftRightClick])
         
+        let eNav = ffilter (\x -> x /= "Del" && x /= "Get" && x /= "Put" && x /= "Term")  eExec
+        performEvent_ $ ffor (attachDyn dWindowsList eNav) $ \(windows, str) -> do
+                    jsStr <- liftIO $ toJSVal str
+                    let vWindows = map (\(_,x) -> x) windows
+                    let vWindow = dropWhile (\x -> not (isTerm (_window_type x))) vWindows 
+                    case vWindow of
+                            [] -> return ()
+                            xs -> let vWindow = head xs
+                                      (Term termId) = _window_type vWindow
+                                  in liftIO $ termWrite termId jsStr
+                                  
         let eWindow = leftmost 
                 [
                ffor eWindowDelete $ \vId model -> model & windows .~ (window_delete vId (_windows model))
@@ -240,9 +255,10 @@ window refId dColumId eNewWindow eDrop dWindow = do
                                    else newModel
                         in helper model
               ,ffor (tag (current dId) winDrop) $ \vId model -> model & windows .~ (window_delete vId (_windows model))
-              ,fmap (window_new Term "Term") performENewTerm
+              ,fmap (window_new (Term nullPtr) "Term") performENewTerm
               ,evFile
               ,evFrame
+              ,evTerm
                 ]
                 
         return (eWindow,winDrop)
@@ -358,7 +374,7 @@ terminal postBuild dCombine dType eExec = do
                                 "font-size:18px;" ++
                                 "border : none;" ++
                                 "display : " ++ 
-                                    (if height > 25 && windowType == Term
+                                    (if height > 25 && (isTerm windowType)
                                     then "inline-block;"
                                     else "none;") ++ 
                                 "height:" ++ (show $ height-25) ++ "px;" ++
@@ -370,7 +386,8 @@ terminal postBuild dCombine dType eExec = do
         
         let reload = ffilter (=="Get") eExec
         
-        let initEv = ffilter (==Term) $ leftmost [updated $ nubDyn dType, tag (current dType) postBuild,tag (current dType) reload]
+      --  let initEv = ffilter isTerm $ leftmost [updated $ nubDyn dType, tag (current dType) postBuild,tag (current dType) reload]
+        let initEv = ffilter isTerm $ leftmost [tag (current dType) postBuild,tag (current dType) reload]
               
         termRef <- performEvent $ ffor (tag (current dCombine) initEv) $ \(id,_,_,_) -> do
             liftIO $ setInnerHTML (_el_element  termEl) (Just "")
@@ -378,12 +395,20 @@ terminal postBuild dCombine dType eExec = do
             liftIO $ term jsId
         
         dTerm <- holdDyn nullPtr termRef
+        performEvent_ $ ffor (updated dTerm) $ \termRef ->
+                    liftIO $ putStrLn $ show termRef
         performEvent $ ffor (tagDyn dTerm (updated dCombine)) $ \termRef -> liftIO $ termRefresh termRef
         return ()
             
     let ev = leftmost
            [
-                
+                ffor (attach (current dCombine) (updated dTerm)) $ \((vId,_,_,_), termId) model ->
+                    let vWindows = _windows model
+                        helperFindIndex window = vId == _window_id window
+                        (Just index) = findIndex helperFindIndex vWindows;
+                        vWindow = vWindows !! index
+                    in model & windows .~ 
+                        (take (index-1) vWindows ++ [vWindow & window_type .~ (Term termId)] ++ drop (index+1) vWindows)
            ]
            
     return (termEl,ev)
@@ -459,7 +484,7 @@ update refId model eNewWindow eNewDir eNewTerm eWindows eAdd = do
               ,eWindows
               ,fmap (window_new File "") (tagDyn dId eNewWindow)
               ,fmap (window_new Frame "/") (tagDyn dId eNewDir)
-              ,fmap (window_new Term "Term") (tagDyn dId eNewTerm)
+              ,fmap (window_new (Term nullPtr) "Term") (tagDyn dId eNewTerm)
               ,fmap window_add eAdd
              ]
     mapDyn _windows dynWindows
