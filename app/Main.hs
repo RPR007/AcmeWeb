@@ -1,5 +1,6 @@
 {-# LANGUAGE PatternSynonyms, ForeignFunctionInterface,JavaScriptFFI,CPP,RecursiveDo, ScopedTypeVariables, FlexibleContexts,TypeFamilies, ConstraintKinds, TemplateHaskell #-}
 
+module Main where
 
 import GHCJS.DOM.Element as El
 import GHCJS.DOM.MouseEvent
@@ -28,26 +29,26 @@ acmeWeb = do
       if isLogin
         then do
          rec  (elAcmeWeb,_) <- elAttr' "div" (  "id" =: "acmeweb"
-                       <> "class" =: "acmeweb") $ do
-              eNav <- nav
-              let eNewColum = tag (constant ()) $ ffilter (=="Newcol") eNav
-              let eLogout = tag (constant ()) $ ffilter (=="Logout") eNav
-              performEventAsync $ ffor eLogout (\n cb -> liftIO setLogout >> liftIO reload)
-              
-              eDrop <- wrapDomEvent (_el_element elAcmeWeb) (`on` El.drop) $ do
-                                preventDefault
-                                ev <- event
-                                liftIO $ getClientX ev
-              performEvent $ fmap return eDrop
-              eDragOver <- wrapDomEvent (_el_element elAcmeWeb) (`on` dragOver) $ preventDefault
-              performEvent $ fmap return eDragOver
-              
-              stateRef <- liftIO $ newIORef []
-              let refId = liftIO $ newMVar (0 :: Int)
-              colums $ def & columsConfig_newColum .~ eNewColum
-                           & columsConfig_drop .~ eDrop
-                           & columsConfig_id .~ refId
-                           & columsConfig_stateRef .~ (Just stateRef)
+                           <> "class" =: "acmeweb") $ do
+                  eNav <- nav
+                  let eNewColum = tag (constant ()) $ ffilter (=="Newcol") eNav
+                  let eLogout = tag (constant ()) $ ffilter (=="Logout") eNav
+                  performEventAsync $ ffor eLogout (\n cb -> liftIO setLogout >> liftIO reload)
+                  
+                  eDrop <- wrapDomEvent (_el_element elAcmeWeb) (`on` El.drop) $ do
+                                    preventDefault
+                                    ev <- event
+                                    liftIO $ getClientX ev
+                  performEvent $ fmap return eDrop
+                  eDragOver <- wrapDomEvent (_el_element elAcmeWeb) (`on` dragOver) $ preventDefault
+                  performEvent $ fmap return eDragOver
+                  
+                  stateRef <- liftIO $ newIORef []
+                  let refId = liftIO $ newMVar (0 :: Int)
+                  colums $ def & columsConfig_newColum .~ eNewColum
+                               & columsConfig_drop .~ eDrop
+                               & columsConfig_id .~ refId
+                               & columsConfig_stateRef .~ (Just stateRef)
          return ()
         else
             elClass "section" "signin-section" $ 
@@ -56,7 +57,7 @@ acmeWeb = do
                     accessDenied dynRep
                     (signinEv,dynRep) <- send password
                 return ()
-                        
+                   
 nav :: MonadWidget t m => m (Event t String)
 nav = el "nav" $ do
    elAttr "div" ("style" =: "display: inline-block;vertical-align:middle;width : 30px;border-bottom : 1px solid black;height : 22px;") $ blank
@@ -66,4 +67,3 @@ nav = el "nav" $ do
                                                     <> "style" =: "border-bottom : 1px solid black;height : 22px;"
                                                     <> "oncontextmenu" =: "return false;")
    return $ _commandInput_execute c
-          

@@ -1,4 +1,1 @@
-all : ; cp src/php/* bin.jsexe/php/ ; ghcjs --make src/AcmeWeb.hs -isrc/ -odir odir -hidir hidir  -o bin -O2; cp -R bin.jsexe/* ~/srv/http/AcmeWeb
-
-clean :
-	rm -rf src/*.js*
+all : ; stack build ; cp -R .stack-work/install/x86_64-linux/lts-6.13/ghcjs-0.2.0.9006013_ghc-7.10.3/bin/AcmeWeb-exe.jsexe/ ./
